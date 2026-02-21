@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidTool</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>VidTool</h1>
+      <div class="header-right">
+        <span id="backend-status" class="status-dot" title="Backend status"></span>
+        <button id="settings-btn" class="settings-btn" title="Settings">&#9881;</button>
+      </div>
+    </header>
+
+    <div id="settings-panel" style="display:none;">
+      <label class="settings-label">Backend server address:</label>
+      <div class="settings-row">
+        <input id="server-input" type="text" class="settings-input" placeholder="e.g. 192.168.1.50:9160">
+        <button id="save-server-btn" class="btn btn-primary btn-sm">Save</button>
+      </div>
+      <div id="settings-hint" class="hint">Default: localhost:9160</div>
+    </div>
+
+    <div id="status-msg">Scanning page...</div>
+
+    <div id="video-list"></div>
+
+    <div id="empty-state" style="display:none;">
+      <p>No videos detected on this page.</p>
+      <p class="hint">Try the page URL anyway?</p>
+      <button id="try-page-btn" class="btn btn-primary">Try with yt-dlp</button>
+    </div>
+
+    <div id="backend-offline" style="display:none;">
+      <p class="error-text">Backend is not running.</p>
+      <p class="hint">Start it with:</p>
+      <code>cd backend && python server.py</code>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+FROM python:3.11-slim
+
+# Install ffmpeg and curl
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ffmpeg \
+        curl \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install yt-dlp as a standalone binary
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+    -o /usr/local/bin/yt-dlp && \
+    chmod +x /usr/local/bin/yt-dlp
+
+# Copy the standalone server (zero Python dependencies)
+WORKDIR /app
+COPY standalone/backend/server.py /app/server.py
+
+# Bind to all interfaces so the container is reachable over the network
+ENV VIDTOOL_HOST=0.0.0.0
+ENV VIDTOOL_PORT=9160
+ENV VIDTOOL_DOWNLOAD_DIR=/downloads
+
+RUN mkdir -p /downloads
+
+EXPOSE 9160
+
+CMD ["python", "/app/server.py"]

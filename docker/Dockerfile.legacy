@@ -1,12 +1,18 @@
-FROM alpine:3.14
+FROM debian:buster-slim
 
-# Install Python 3 and ffmpeg
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    ffmpeg
+# Point apt at the Debian archive (buster repos have been retired)
+RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
 
-# Copy yt-dlp binary (downloaded on host before build)
+# Install Python 3 (for the server) and ffmpeg
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the standalone yt-dlp binary (bundles its own Python, doesn't need system Python)
+# Download on host first: curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o docker/yt-dlp
 COPY docker/yt-dlp /usr/local/bin/yt-dlp
 RUN chmod +x /usr/local/bin/yt-dlp
 

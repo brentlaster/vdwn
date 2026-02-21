@@ -1,35 +1,14 @@
 FROM alpine:3.14
 
-# Install build dependencies for compiling Python from source
+# Install Python 3 and ffmpeg
 RUN apk add --no-cache \
-    build-base \
-    zlib-dev \
-    libffi-dev \
-    openssl-dev \
-    readline-dev \
-    bzip2-dev \
-    xz-dev \
-    sqlite-dev \
-    curl \
-    ffmpeg \
-    ca-certificates
+    python3 \
+    py3-pip \
+    ffmpeg
 
-# Download and compile Python 3.11
-RUN curl -L https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz -o /tmp/python.tgz && \
-    cd /tmp && tar xzf python.tgz && \
-    cd Python-3.11.9 && \
-    ./configure --prefix=/usr/local --with-ensurepip=install && \
-    make -j$(nproc) && \
-    make install && \
-    ls -la /usr/local/bin/python* && \
-    rm -rf /tmp/python.tgz /tmp/Python-3.11.9
-
-# Clean up build dependencies to reduce image size
-RUN apk del build-base zlib-dev libffi-dev openssl-dev readline-dev bzip2-dev xz-dev sqlite-dev
-
-# Link pip and install latest yt-dlp
-RUN ln -sf /usr/local/bin/python3 /usr/bin/python3 && \
-    /usr/local/bin/python3 -m pip install --no-cache-dir yt-dlp
+# Copy yt-dlp binary (downloaded on host before build)
+COPY docker/yt-dlp /usr/local/bin/yt-dlp
+RUN chmod +x /usr/local/bin/yt-dlp
 
 # Copy custom extractor plugins (if any)
 COPY docker/plugins /app/plugins

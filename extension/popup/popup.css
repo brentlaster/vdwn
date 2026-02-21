@@ -114,6 +114,24 @@ header h1 {
   margin-top: 4px;
 }
 
+/* Filename input */
+.filename-row {
+  margin-bottom: 6px;
+}
+
+.filename-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #374151;
+}
+.filename-input::placeholder {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
 /* Save file link */
 .save-link {
   display: inline-block;

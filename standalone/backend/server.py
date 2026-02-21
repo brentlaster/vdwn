@@ -119,7 +119,7 @@ def find_ytdlp():
 YTDLP_BIN = find_ytdlp()
 
 
-def run_download(task_id, url, quality):
+def run_download(task_id, url, quality, custom_filename=""):
     """
     Run yt-dlp as a subprocess, parsing its stdout for progress updates.
     This runs in a background thread.
@@ -137,7 +137,14 @@ def run_download(task_id, url, quality):
             pass
 
     fmt = QUALITY_MAP.get(quality, QUALITY_MAP["best"])
-    output_template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
+
+    # Files are saved hidden (dot-prefix) on the server.
+    # The display_name (without dot) is used when serving to remote clients.
+    if custom_filename:
+        # Use custom name; yt-dlp will add the extension
+        output_template = os.path.join(DOWNLOAD_DIR, "." + custom_filename + ".%(ext)s")
+    else:
+        output_template = os.path.join(DOWNLOAD_DIR, ".%(title)s.%(ext)s")
 
     cmd = [
         YTDLP_BIN,
@@ -216,10 +223,12 @@ def run_download(task_id, url, quality):
                 )
                 if already_match:
                     filename = os.path.basename(already_match.group(1).strip())
+                display = _display_name(filename) if filename else "already downloaded"
                 update_task(task_id,
                             status="finished",
                             percent=100,
-                            filename=filename or "already downloaded")
+                            filename=filename or "already downloaded",
+                            display_name=display)
                 break
 
         proc.stdout.close()
@@ -229,10 +238,12 @@ def run_download(task_id, url, quality):
             # Try to find the actual output filename if we didn't capture it
             if not filename:
                 filename = find_latest_file(DOWNLOAD_DIR)
+            display = _display_name(filename) if filename else "download complete"
             update_task(task_id,
                         status="finished",
                         percent=100,
-                        filename=filename or "download complete")
+                        filename=filename or "download complete",
+                        display_name=display)
         else:
             task = get_task(task_id)
             if task and task.get("status") != "finished":
@@ -242,6 +253,13 @@ def run_download(task_id, url, quality):
 
     except Exception as e:
         update_task(task_id, status="error", error=str(e))
+
+
+def _display_name(filename):
+    """Strip the leading dot from hidden filenames for display/download."""
+    if filename.startswith("."):
+        return filename[1:]
+    return filename
 
 
 def find_latest_file(directory):
@@ -362,10 +380,16 @@ class VidToolHandler(BaseHTTPRequestHandler):
 
         url = data.get("url", "").strip()
         quality = data.get("quality", "best").strip()
+        custom_filename = data.get("filename", "").strip()
 
         if not url or not url.startswith(("http://", "https://")):
             self._send_json(400, {"detail": "Invalid URL"})
             return
+
+        # Sanitize custom filename (keep only safe characters)
+        if custom_filename:
+            custom_filename = re.sub(r'[^\w\s\-.]', '_', custom_filename)
+            custom_filename = custom_filename.strip('. ')
 
         task_id = new_task_id()
         with tasks_lock:
@@ -376,10 +400,12 @@ class VidToolHandler(BaseHTTPRequestHandler):
                 "speed": "",
                 "eta": "",
                 "filename": "",
+                "display_name": "",
                 "error": "",
             }
 
-        t = threading.Thread(target=run_download, args=(task_id, url, quality))
+        t = threading.Thread(target=run_download,
+                             args=(task_id, url, quality, custom_filename))
         t.daemon = True
         t.start()
 
@@ -464,11 +490,14 @@ class VidToolHandler(BaseHTTPRequestHandler):
         }
         ctype = content_types.get(ext, "application/octet-stream")
 
+        # Use display_name (without dot prefix) for the downloaded filename
+        display_name = task.get("display_name", "") or _display_name(filename)
+
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(file_size))
         # Encode filename for Content-Disposition (ASCII-safe fallback)
-        safe_name = filename.encode("ascii", errors="replace").decode("ascii")
+        safe_name = display_name.encode("ascii", errors="replace").decode("ascii")
         self.send_header(
             "Content-Disposition",
             'attachment; filename="%s"' % safe_name.replace('"', '_')

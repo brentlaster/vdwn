@@ -284,6 +284,17 @@
     info.appendChild(details);
     card.appendChild(info);
 
+    // Filename input row
+    var fnRow = document.createElement("div");
+    fnRow.className = "filename-row";
+    var fnInput = document.createElement("input");
+    fnInput.type = "text";
+    fnInput.className = "filename-input";
+    fnInput.id = "fname-" + index;
+    fnInput.placeholder = "Save as\u2026 (optional, leave blank for original name)";
+    fnRow.appendChild(fnInput);
+    card.appendChild(fnRow);
+
     // Controls row: quality select + download button
     var controls = document.createElement("div");
     controls.className = "video-controls";
@@ -338,9 +349,10 @@
       var url = this.getAttribute("data-url");
       var idx = this.getAttribute("data-index");
       var quality = this.parentNode.querySelector(".quality-select").value;
+      var saveName = document.getElementById("fname-" + idx).value.trim();
       this.disabled = true;
       this.textContent = "Starting\u2026";
-      startDownload(url, quality, idx);
+      startDownload(url, quality, idx, saveName);
     });
 
     return card;
@@ -348,17 +360,22 @@
 
   // ---- Download + SSE progress ----
 
-  function startDownload(url, quality, index) {
+  function startDownload(url, quality, index, saveName) {
     var wrap = document.getElementById("progress-wrap-" + index);
     var bar = document.getElementById("bar-" + index);
     var text = document.getElementById("ptext-" + index);
     wrap.className = "progress-wrap active";
     text.textContent = "Connecting\u2026";
 
+    var payload = { url: url, quality: quality };
+    if (saveName) {
+      payload.filename = saveName;
+    }
+
     fetch(API_BASE + "/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: url, quality: quality }),
+      body: JSON.stringify(payload),
     })
       .then(function (resp) {
         if (!resp.ok) {
@@ -409,9 +426,10 @@
         text.className = "progress-text";
       } else if (data.status === "finished") {
         bar.style.width = "100%";
-        text.textContent = "Done: " + (data.filename || "download complete");
+        var dname = data.display_name || data.filename || "download complete";
+        text.textContent = "Done: " + dname;
         text.className = "progress-text done";
-        addSaveLink(text, data.task_id, data.filename);
+        addSaveLink(text, data.task_id, dname);
         evtSource.close();
       } else if (data.status === "error") {
         text.textContent = "Error: " + (data.error || "Unknown error");
@@ -457,9 +475,10 @@
           if (data.status === "finished" || data.status === "error") {
             clearInterval(interval);
             if (data.status === "finished") {
-              text.textContent = "Done: " + (data.filename || "complete");
+              var dname = data.display_name || data.filename || "complete";
+              text.textContent = "Done: " + dname;
               text.className = "progress-text done";
-              addSaveLink(text, data.task_id, data.filename);
+              addSaveLink(text, data.task_id, dname);
             } else {
               text.textContent = "Error: " + (data.error || "Unknown");
               text.className = "progress-text error";

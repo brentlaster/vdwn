@@ -1,8 +1,13 @@
-FROM python:3.9-slim-buster
+FROM debian:buster-slim
 
-# Install ffmpeg and curl
+# Point apt at the Debian archive (buster repos have been retired)
+RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
+
+# Install Python, ffmpeg, and curl
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+        python3 \
         ffmpeg \
         curl \
         ca-certificates \
@@ -25,4 +30,4 @@ RUN mkdir -p /downloads
 
 EXPOSE 9160
 
-CMD ["python", "/app/server.py"]
+CMD ["python3", "/app/server.py"]

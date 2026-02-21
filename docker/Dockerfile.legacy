@@ -18,9 +18,10 @@ RUN apk add --no-cache \
 RUN curl -L https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz -o /tmp/python.tgz && \
     cd /tmp && tar xzf python.tgz && \
     cd Python-3.11.9 && \
-    ./configure --prefix=/usr/local --enable-optimizations --with-ensurepip=install 2>&1 | tail -5 && \
-    make -j$(nproc) 2>&1 | tail -5 && \
-    make install 2>&1 | tail -5 && \
+    ./configure --prefix=/usr/local --with-ensurepip=install && \
+    make -j$(nproc) && \
+    make install && \
+    ls -la /usr/local/bin/python* && \
     rm -rf /tmp/python.tgz /tmp/Python-3.11.9
 
 # Clean up build dependencies to reduce image size

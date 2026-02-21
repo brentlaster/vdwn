@@ -1,18 +1,38 @@
 FROM alpine:3.14
 
-# Install Python 3 and ffmpeg
+# Install build dependencies for compiling Python from source
 RUN apk add --no-cache \
-    python3 \
-    ffmpeg
+    build-base \
+    zlib-dev \
+    libffi-dev \
+    openssl-dev \
+    readline-dev \
+    bzip2-dev \
+    xz-dev \
+    sqlite-dev \
+    curl \
+    ffmpeg \
+    ca-certificates
 
-# Copy yt-dlp binary (downloaded on host before build)
-COPY docker/yt-dlp /usr/local/bin/yt-dlp
-RUN chmod +x /usr/local/bin/yt-dlp
+# Download and compile Python 3.11
+RUN curl -L https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz -o /tmp/python.tgz && \
+    cd /tmp && tar xzf python.tgz && \
+    cd Python-3.11.9 && \
+    ./configure --prefix=/usr/local --enable-optimizations --with-ensurepip=install 2>&1 | tail -5 && \
+    make -j$(nproc) 2>&1 | tail -5 && \
+    make install 2>&1 | tail -5 && \
+    rm -rf /tmp/python.tgz /tmp/Python-3.11.9
+
+# Clean up build dependencies to reduce image size
+RUN apk del build-base zlib-dev libffi-dev openssl-dev readline-dev bzip2-dev xz-dev sqlite-dev
+
+# Install latest yt-dlp via pip
+RUN pip3 install --no-cache-dir yt-dlp
 
 # Copy custom extractor plugins (if any)
 COPY docker/plugins /app/plugins
 
-# Copy the standalone server (zero Python dependencies)
+# Copy the standalone server
 WORKDIR /app
 COPY standalone/backend/server.py /app/server.py
 

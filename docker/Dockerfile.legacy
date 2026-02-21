@@ -1,17 +1,11 @@
-FROM debian:buster-slim
+FROM alpine:3.18
 
-# Point apt at the Debian archive (buster repos have been retired)
-RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list && \
-    echo "deb http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
-
-# Install Python, ffmpeg, and curl
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        python3 \
-        ffmpeg \
-        curl \
-        ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Install Python 3.11, ffmpeg, and curl
+RUN apk add --no-cache \
+    python3 \
+    ffmpeg \
+    curl \
+    ca-certificates
 
 # Install yt-dlp as a standalone binary
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \

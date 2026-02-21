@@ -26,8 +26,9 @@ RUN curl -L https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz -o /tmp/p
 # Clean up build dependencies to reduce image size
 RUN apk del build-base zlib-dev libffi-dev openssl-dev readline-dev bzip2-dev xz-dev sqlite-dev
 
-# Install latest yt-dlp via pip
-RUN pip3 install --no-cache-dir yt-dlp
+# Link pip and install latest yt-dlp
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python3 && \
+    /usr/local/bin/python3 -m pip install --no-cache-dir yt-dlp
 
 # Copy custom extractor plugins (if any)
 COPY docker/plugins /app/plugins

@@ -177,6 +177,10 @@ def run_download(task_id, url, quality, custom_filename=""):
             if not line:
                 continue
 
+            # Log all yt-dlp output for debugging
+            sys.stderr.write("[yt-dlp] %s\n" % line)
+            sys.stderr.flush()
+
             # Parse yt-dlp progress lines like:
             #   [download]  42.3% of ~50.00MiB at 2.10MiB/s ETA 00:14
             #   [download]  42.3% of 50.00MiB at 2.10MiB/s ETA 00:14
@@ -287,12 +291,10 @@ class VidToolHandler(BaseHTTPRequestHandler):
         GET  /progress/<task_id>  - SSE stream of download progress
     """
 
-    # Suppress default logging to stderr (too noisy)
     def log_message(self, format, *args):
-        # Only log errors and starts
         msg = format % args
-        if "404" in msg or "500" in msg or "error" in msg.lower():
-            sys.stderr.write("[%s] %s\n" % (self.log_date_time_string(), msg))
+        sys.stderr.write("[%s] %s\n" % (self.log_date_time_string(), msg))
+        sys.stderr.flush()
 
     def _set_cors_headers(self):
         """Allow requests from Chrome extensions and localhost."""

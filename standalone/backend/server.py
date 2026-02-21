@@ -149,6 +149,7 @@ def run_download(task_id, url, quality, custom_filename=""):
     cmd = [
         YTDLP_BIN,
         "--newline",                # one progress line per update (crucial for parsing)
+        "--verbose",                # show detailed debug output
         "-f", fmt,
         "-o", output_template,
         "--merge-output-format", "mp4",
@@ -164,7 +165,6 @@ def run_download(task_id, url, quality, custom_filename=""):
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            bufsize=1,
         )
 
         filename = ""

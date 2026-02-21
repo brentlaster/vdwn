@@ -9,6 +9,9 @@ RUN apk add --no-cache \
 COPY docker/yt-dlp /usr/local/bin/yt-dlp
 RUN chmod +x /usr/local/bin/yt-dlp
 
+# Copy custom extractor plugins (if any)
+COPY docker/plugins /app/plugins
+
 # Copy the standalone server (zero Python dependencies)
 WORKDIR /app
 COPY standalone/backend/server.py /app/server.py
@@ -16,6 +19,7 @@ COPY standalone/backend/server.py /app/server.py
 ENV VIDTOOL_HOST 0.0.0.0
 ENV VIDTOOL_PORT 9160
 ENV VIDTOOL_DOWNLOAD_DIR /downloads
+ENV YT_DLP_PLUGIN_DIRS /app/plugins
 
 RUN mkdir -p /downloads
 
